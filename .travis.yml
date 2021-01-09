@@ -1,0 +1,26 @@
+sudo: required
+language: generic
+services:
+  - docker
+
+before_install:
+  - docker build -t mosabami/react-multi-docker-test -f ./client/Dockerfile.dev ./client
+  # - docker build other container we want to test 
+
+script:
+  - docker run -e CI=true USERNAME/react-test npm test # npm test overwrite the defaul command -- stuff ensures it runs test not in watch mode
+  # docker run other container we want to test pm test -- 
+
+after_success:
+  - docker build -t mosabami/multi-docker-client ./client # ./client specifies the build context
+  - docker build -t mosabami/multi-docker-nginx ./nginx
+  - docker build -t mosabami/multi-docker-worker ./worker
+  - docker build -t mosabami/multi-docker-server ./server
+
+  # log into docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin # get the variable on left side as the std in of the right side -u username flag -password password flag
+  # ake these images and push to dockerhub
+  - docker push mosabami/multi-docker-client
+  - docker push mosabami/multi-docker-nginx
+  - docker push mosabami/multi-docker-worker
+  - docker push mosabami/multi-docker-server
